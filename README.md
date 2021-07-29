@@ -1,6 +1,7 @@
 # Self-Supervised Mesh Reconstruction
 This is the source code of Self-Supervised Mesh Reconstruction.
 ### We are upgrading the dependent kaolin version from v0.1 to v0.9.
+### The new version will be released soon (1-2 weeks).
 
 ### Requirements
 - Linux
