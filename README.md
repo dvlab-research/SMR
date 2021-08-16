@@ -61,6 +61,10 @@ Or you can install the required packages seperately
                         --lambda_ic 0.1 \
                         --lambda_lc 0.001
     ```
+## ToDo
+- [x] Update the Differentiable Mesh Renderer from Kaolin v0.1 to Kaolin v0.9  
+- [ ] Synthetic image with resolution up to 256
+
 
 ## Contact
 Tao Hu - [taohu@cse.cuhk.edu.hk](taohu@cse.cuhk.edu.hk)
