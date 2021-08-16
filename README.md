@@ -66,6 +66,7 @@ Or you can install the required packages seperately
 Tao Hu - [taohu@cse.cuhk.edu.hk](taohu@cse.cuhk.edu.hk)
 
 ## Citation
+```
 @InProceedings{Hu_2021_CVPR,
     author    = {Hu, Tao and Wang, Liwei and Xu, Xiaogang and Liu, Shu and Jia, Jiaya},
     title     = {Self-Supervised 3D Mesh Reconstruction From Single Images},
@@ -74,3 +75,4 @@ Tao Hu - [taohu@cse.cuhk.edu.hk](taohu@cse.cuhk.edu.hk)
     year      = {2021},
     pages     = {6002-6011}
 }
+```
