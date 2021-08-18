@@ -31,10 +31,7 @@ Or you can install the required packages seperately
     $ python setup.py develop
     ```
 
-* OpenCV and other requirements
-    ```sh
-    $ conda install -c menpo opencv
-    ```
+* Others: tqdm, trimesh, imageio, etc.
 
 ## Training and Testing
 #### Training and Testing On the CUB-200-2011 (Bird) dataset
@@ -44,7 +41,7 @@ Or you can install the required packages seperately
   Download the processed data from [Google Drive](https://drive.google.com/file/d/1SkX_FWUfLOaTr371TBkQnDH9oDJ5Khwc/view?usp=sharing).
 * Run
     ```sh
-    DATA_ROOT=/path/to/Bird/Crop_Seg_Images
+    DATA_ROOT=/path/to/Bird/
     $ python train.py --imageSize 128 \
                         --batchSize 24 \
                         --lr 0.0001 \
@@ -61,6 +58,26 @@ Or you can install the required packages seperately
                         --lambda_ic 0.1 \
                         --lambda_lc 0.001
     ```
+    or Multi-GPU
+    ```sh
+    python train.py --imageSize 256 \
+                     --batchSize 24 \
+                     --lr 0.0001 \
+                     --niter 500 \
+                     --dataroot $DATA_ROOT \
+                     --template_path ./template/sphere.obj \
+                     --outf ./log/Bird/SMR_256_2gpus_flip\
+                     --azi_scope 360 \
+                     --elev_range '0~30' \
+                     --dist_range '2~6' \
+                     --lambda_gan 0.0001 \
+                     --lambda_reg 1.0 \
+                     --lambda_data 1.0 \
+                     --lambda_ic 0.1 \
+                     --lambda_lc 0.001 \
+                     --multigpus
+    ```
+
 
 ## Contact
 Tao Hu - [taohu@cse.cuhk.edu.hk](taohu@cse.cuhk.edu.hk)

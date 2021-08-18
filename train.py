@@ -5,10 +5,8 @@ import math
 import tqdm
 import shutil
 import imageio
-import cv2
 import numpy as np
 import trimesh
-from PIL import Image
 
 # import torch related
 import torch
@@ -83,24 +81,22 @@ train_dataset = Dataset(opt.dataroot, opt.imageSize, train=True)
 test_dataset = Dataset(opt.dataroot, opt.imageSize, train=False)
 
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=opt.batchSize,
-                                         shuffle=True, drop_last=True, num_workers=int(opt.workers))
+                                         shuffle=True, drop_last=True, pin_memory=True, num_workers=int(opt.workers))
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=opt.batchSize,
-                                         shuffle=False, num_workers=int(opt.workers))
+                                         shuffle=False, pin_memory=True, num_workers=int(opt.workers))
 
 def deep_copy(att, index=None, detach=False):
-    try:
-        if index is None:
-            index = torch.arange(att['distances'].shape[0]).cuda()
+    if index is None:
+        index = torch.arange(att['distances'].shape[0]).cuda()
 
-        copy_att = {}
-        for key, value in att.items():
+    copy_att = {}
+    for key, value in att.items():
+        copy_keys = ['azimuths', 'elevations', 'distances', 'vertices', 'delta_vertices', 'textures', 'lights']
+        if key in copy_keys:
             if detach:
                 copy_att[key] = value[index].clone().detach()
             else:
                 copy_att[key] = value[index].clone()
-    except Exception as e:
-        import pdb; pdb.set_trace()
-        print(e)
     return copy_att
 
 
@@ -120,7 +116,7 @@ class DiffRender(object):
         vertices_max = vertices.max(0, True)[0]
         vertices_min = vertices.min(0, True)[0]
         vertices = (vertices - vertices_min) / (vertices_max - vertices_min)
-        vertices_init = vertices.unsqueeze(0) * 2.0 - 1.0 # (1, V, 3)
+        vertices_init = vertices * 2.0 - 1.0 # (1, V, 3)
 
         # get face_uvs
         faces = mesh.faces
@@ -130,14 +126,19 @@ class DiffRender(object):
         face_uvs.requires_grad = False
 
         self.num_faces = faces.shape[0]
-        self.num_vertices = vertices_init.shape[1]
+        self.num_vertices = vertices_init.shape[0]
         face_size = 3
 
         # flip index
-        face_center = (vertices_init[0][faces[:, 0]] + vertices_init[0][faces[:, 1]] + vertices_init[0][faces[:, 2]]) / 3.0
-        face_center_flip = face_center.clone()
-        face_center_flip[:, 2] *= -1
-        self.flip_index = torch.cdist(face_center, face_center_flip).min(1)[1]
+        # face_center = (vertices_init[0][faces[:, 0]] + vertices_init[0][faces[:, 1]] + vertices_init[0][faces[:, 2]]) / 3.0
+        # face_center_flip = face_center.clone()
+        # face_center_flip[:, 2] *= -1
+        # self.flip_index = torch.cdist(face_center, face_center_flip).min(1)[1]
+        
+        # flip index
+        vertex_center_flip = vertices_init.clone()
+        vertex_center_flip[:, 2] *= -1
+        self.flip_index = torch.cdist(vertices_init, vertex_center_flip).min(1)[1]
 
         ## Set up auxiliary connectivity matrix of edges to faces indexes for the flat loss
         edges = torch.cat([faces[:,i:i+2] for i in range(face_size - 1)] +
@@ -269,7 +270,7 @@ class DiffRender(object):
         return loss_data
 
     def recon_flip(self, att):
-        Na = att['face_normals']
+        Na = att['delta_vertices']
         Nf = Na.index_select(1, self.flip_index.to(Na.device))
         Nf[..., 2] *= -1
 
@@ -300,22 +301,8 @@ class DiffRender(object):
         loss_reg = laplacian_weight * loss_laplacian + flat_weight * loss_flat
         return loss_reg
 
-class ConvBnReLU(nn.Module):
-    def __init__(self, in_channels, out_channels,
-                 kernel_size=3, stride=1, pad=1):
-        super(ConvBnReLU, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, 
-                              kernel_size, stride=stride, padding=pad, bias=False)
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.act = nn.ReLU(True)
 
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.act(x)
-        return x
-
-
+# network of landmark consistency
 class Landmark_Consistency(nn.Module):
     def __init__(self, num_landmarks, dim_feat, num_samples):
         super(Landmark_Consistency, self).__init__()
@@ -375,7 +362,7 @@ class AttributeEncoder(nn.Module):
 
         # vertex
         delta_vertices = self.shape_enc(input_img)
-        vertices = self.vertices_init.to(device) + delta_vertices
+        vertices = self.vertices_init[None].to(device) + delta_vertices
 
         # textures
         textures = self.texture_enc(input_img)
@@ -534,7 +521,7 @@ if __name__ == '__main__':
                 rand_b = torch.randperm(batch_size)
                 Aa = deep_copy(Ae, rand_a)
                 Ab = deep_copy(Ae, rand_b)
-                Ai = deep_copy(Ae)
+                Ai = {}
 
                 if opt.lambda_ic > 0.0:
                     # camera interpolation
@@ -546,6 +533,7 @@ if __name__ == '__main__':
                     # shape interpolation
                     alpha_shape = torch.empty((batch_size, 1, 1), dtype=torch.float32).uniform_(0.0, 1.0).cuda()
                     Ai['vertices'] = alpha_shape * Aa['vertices'] + (1-alpha_shape) * Ab['vertices']
+                    Ai['delta_vertices'] = alpha_shape * Aa['delta_vertices'] + (1-alpha_shape) * Ab['delta_vertices']
 
                     # texture interpolation
                     alpha_texture = torch.empty((batch_size, 1, 1, 1), dtype=torch.float32).uniform_(0.0, 1.0).cuda()
@@ -586,7 +574,7 @@ if __name__ == '__main__':
                 # mesh regularization
                 lossR_reg = opt.lambda_reg * (diffRender.calc_reg_loss(Ae) +  diffRender.calc_reg_loss(Ai)) / 2.0
                 # lossR_flip = 0.002 * (diffRender.recon_flip(Ae) + diffRender.recon_flip(Ai))
-                lossR_flip = 0.01 * (diffRender.recon_flip(Ae) + diffRender.recon_flip(Ai))
+                lossR_flip = 0.1 * (diffRender.recon_flip(Ae) + diffRender.recon_flip(Ai) + diffRender.recon_flip(Aire)) / 3.0
 
                 # interpolated cycle consistency
                 loss_cam, loss_shape, loss_texture, loss_light = diffRender.recon_att(Aire, deep_copy(Ai, detach=True))
@@ -632,7 +620,7 @@ if __name__ == '__main__':
             summary_writer.add_scalar('Train/lossR_reg', lossR_reg.item(), epoch)
             summary_writer.add_scalar('Train/lossR_data', lossR_data.item(), epoch)
             summary_writer.add_scalar('Train/lossR_IC', lossR_IC.item(), epoch)
-            summary_writer.add_scalar('Train/lossR_lc', lossR_LC.item(), epoch)
+            summary_writer.add_scalar('Train/lossR_LC', lossR_LC.item(), epoch)
             summary_writer.add_scalar('Train/lossR_flip', lossR_flip.item(), epoch)
 
             num_images = Xa.shape[0]
