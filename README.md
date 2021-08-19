@@ -1,5 +1,5 @@
-# Self-Supervised Mesh Reconstruction
-This is the source code of [Self-Supervised 3D Mesh Reconstruction From Single Images](https://openaccess.thecvf.com/content/CVPR2021/papers/Hu_Self-Supervised_3D_Mesh_Reconstruction_From_Single_Images_CVPR_2021_paper.pdf).
+# Self-Supervised Mesh Reconstruction (SMR)
+This is the source code of [Self-Supervised 3D Mesh Reconstruction From Single Images (CVPR-2021)](https://openaccess.thecvf.com/content/CVPR2021/papers/Hu_Self-Supervised_3D_Mesh_Reconstruction_From_Single_Images_CVPR_2021_paper.pdf).
 
 ### Requirements
 - Linux
@@ -19,7 +19,8 @@ You can directly install the requirements through:
 $ pip install -r requirements.txt
 ```
 
-Or you can install the required packages seperately
+#### Install packages Seperately
+You can also install the required packages seperately
 * Pytorch
     ```sh
     $ conda install pytorch==1.6.0 torchvision==0.7.0 cudatoolkit=10.2 -c pytorch
