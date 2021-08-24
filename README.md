@@ -1,8 +1,8 @@
 # Self-Supervised Mesh Reconstruction (SMR)
 This is the source code of [Self-Supervised 3D Mesh Reconstruction From Single Images (CVPR-2021)](https://openaccess.thecvf.com/content/CVPR2021/papers/Hu_Self-Supervised_3D_Mesh_Reconstruction_From_Single_Images_CVPR_2021_paper.pdf).
 <p float="left">
-<img src="docs/input.png" width="500"/> 
-<img src="docs/rotation.gif" width="500"/>
+<img src="docs/input.png" width="700"/> 
+<img src="docs/rotation.gif" width="700"/>
 </p>
 
 ### Requirements
