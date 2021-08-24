@@ -514,7 +514,6 @@ if __name__ == '__main__':
 
                 # encode real
                 Ae = netE(Xa)
-                # if random.uniform(0.0, 1.0) < 0.5:
                 Xer, Ae = diffRender.render(**Ae)
 
                 rand_a = torch.randperm(batch_size)
@@ -523,6 +522,7 @@ if __name__ == '__main__':
                 Ab = deep_copy(Ae, rand_b)
                 Ai = {}
 
+                # linearly interpolate 3D attributes
                 if opt.lambda_ic > 0.0:
                     # camera interpolation
                     alpha_camera = torch.empty((batch_size), dtype=torch.float32).uniform_(0.0, 1.0).cuda()
@@ -542,6 +542,8 @@ if __name__ == '__main__':
                     # light interpolation
                     alpha_light = torch.empty((batch_size, 1), dtype=torch.float32).uniform_(0.0, 1.0).cuda()
                     Ai['lights'] = alpha_light * Aa['lights'] + (1.0 - alpha_light) * Ab['lights']
+                else:
+                    Ai = Aa
 
                 # interpolated 3D attributes render images, and update Ai
                 Xir, Ai = diffRender.render(**Ai)
