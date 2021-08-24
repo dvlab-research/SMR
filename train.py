@@ -543,7 +543,7 @@ if __name__ == '__main__':
                     alpha_light = torch.empty((batch_size, 1), dtype=torch.float32).uniform_(0.0, 1.0).cuda()
                     Ai['lights'] = alpha_light * Aa['lights'] + (1.0 - alpha_light) * Ab['lights']
                 else:
-                    Ai = Aa
+                    Ai = Ae
 
                 # interpolated 3D attributes render images, and update Ai
                 Xir, Ai = diffRender.render(**Ai)
