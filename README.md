@@ -25,18 +25,18 @@ $ pip install -r requirements.txt
 
 #### Install packages Seperately
 You can also install the required packages seperately
-* Pytorch
+* Pytorch (Please first check your cuda version)
     ```sh
     $ conda install pytorch==1.6.0 torchvision==0.7.0 cudatoolkit=10.2 -c pytorch
     ```
 * Kaolin Library
     ```sh
     $ git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
-    $ git checkout v0.9.0
+    $ git checkout v0.9.1
     $ python setup.py develop
     ```
 
-* Others: tqdm, trimesh, imageio, etc.
+* Others: tqdm, trimesh, imageio, tensorboard.
 
 ## Training and Testing
 #### Training and Testing On the CUB-200-2011 (Bird) dataset
